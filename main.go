@@ -5,7 +5,7 @@ import (
 	"math/rand"
 	"time"
 
-	ap "github.com/echenim/consensus/avalanche-protocol/avalanche"
+	ap "github.com/echenim/consensus/avalanche"
 )
 
 func main() {
