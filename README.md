@@ -14,3 +14,71 @@ Key Features Include:
 - Scalability: Avalanche consensus enables high network throughput while ensuring low latency.
 - Energy Efficiency: Unlike other popular consensus protocols, participation in Avalanche consensus is neither computationally intensive nor expensive.
 - Adaptive Security: Avalanche consensus is designed to resist various attacks, including sybil attacks, distributed denial-of-service (DDoS) attacks, and collusion attacks. Its probabilistic nature ensures that the consensus outcome converges to the desired state, even when the network is under attack.
+
+Below is a diagram illustrating the interaction between the components
+
+```mermaid
+classDiagram
+    class Transaction {
+        +uint64 Nonce
+        +int32 Data
+        +RandomTransaction() *Transaction
+        +Serialize() []byte
+        +Hash() string
+    }
+
+    class Network {
+        +map~int64, Node~ nodes
+        +NewNetwork(n int64) *Network
+        +Run()
+    }
+
+    class Node {
+        +sync.Mutex
+        +int64 ID
+        +map~string, TxState~ Mempool
+        +NewNode(id int64) *Node
+        +HandleMessage(origin int64, msg Message)
+    }
+
+    class Message {
+        <<interface>>
+    }
+
+    class MessageTransaction {
+        +Transaction Tx
+    }
+
+    class TxState {
+        // Implementation of TxState, similar to Rust version
+    }
+
+    Network "1" *-- "many" Node : contains
+    Node "1" *-- "many" TxState : manages
+    MessageTransaction --|> Message : implements
+    Node "1" o-- "many" Message : processes
+    Transaction "1" *-- "1" TxState : represents
+
+```
+
+Creating a Random Transaction
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Transaction
+    User->>Transaction: RandomTransaction()
+    Transaction-->>User: *Transaction
+
+```
+
+Handling a Message
+```mermaid
+sequenceDiagram
+    participant OriginNode
+    participant TargetNode
+    participant Message
+    OriginNode->>TargetNode: Send Message
+    TargetNode->>TargetNode: HandleMessage(origin, msg)
+
+```
