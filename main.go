@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 
-	"github.com/echenim/consensus/pkg/avalanche"
+	"github.com/echenim/AvalancheConsensusProtocol/pkg/avalanche"
 )
 
 func main() {
