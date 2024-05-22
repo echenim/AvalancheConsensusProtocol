@@ -3,26 +3,35 @@ package main
 import (
 	"fmt"
 	"math/rand"
-	"time"
 
-	ap "github.com/echenim/consensus/avalanche"
+	"github.com/echenim/consensus/pkg/avalanche"
 )
 
 func main() {
-	net := ap.NewNetwork(10)
-	net.Run()
+	// Create a new network with 10 nodes
+	network := avalanche.NewNetwork(10)
 
-	for {
-		tx := ap.RandomTransaction()
-		fmt.Printf("sending new transaction into the network %s\n", tx.Hash())
+	// Generate a random transaction
+	tx := avalanche.RandomTransaction()
 
-		// Pick a random node in the network let the node handle the random transaction
-		id := rand.Int63n(int64(len(net.nodes)))
-		node := net.nodes[id]
-		node.Lock()
-		node.HandleMessage(0, &ap.MessageTransaction{tx})
-		node.Unlock()
+	// Print the transaction details
+	fmt.Printf("Transaction: %+v\n", tx)
+	fmt.Printf("Transaction Hash: %s\n", tx.Hash())
 
-		time.Sleep(500 * time.Millisecond)
+	// Run the network in a separate goroutine
+	go network.Run()
+
+	// Simulate sending a transaction to a node
+	node := network.Nodes[0]
+	node.HandleMessage(1, avalanche.MessageTransaction{Tx: tx})
+
+	// Generate conflicting transaction
+	conflictingTx := &avalanche.Transaction{
+		Nonce: tx.Nonce,
+		Data:  int32(rand.Intn(10)),
 	}
+	node.HandleMessage(1, avalanche.MessageTransaction{Tx: conflictingTx})
+
+	// Keep the program running
+	select {}
 }

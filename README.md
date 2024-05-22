@@ -31,13 +31,81 @@ Avalanche is a family of consensus protocols that achieve consensus through repe
 - **Internet of Things (IoT)**
 - **Enterprise Applications**
 
+# System Design Diagram
 
+### Sequential diagram for the Avalanche Consensus Protocol implementation
 
+ The diagram shows how transactions are processed, how nodes query each other for preferences, and how consensus is reached
 
+```mermaid 
+---
+title: how Avalanch transactions are processed
+---
+sequenceDiagram
+    participant NodeA as Node A
+    participant NodeB as Node B
+    participant NodeC as Node C
+    participant NodeD as Node D
+    participant Network as Network
 
+    NodeA->>Network: Create RandomTransaction()
+    Network-->>NodeA: Return Transaction
 
+    NodeA->>NodeA: HandleMessage(Transaction)
+    NodeA->>NodeB: QueryNode(Transaction)
+    NodeB-->>NodeA: Respond with Preference
 
-Below is a diagram illustrating the interaction between the components
+    NodeA->>NodeC: QueryNode(Transaction)
+    NodeC-->>NodeA: Respond with Preference
+
+    NodeA->>NodeD: QueryNode(Transaction)
+    NodeD-->>NodeA: Respond with Preference
+
+    alt Majority Preference is True
+        NodeA->>NodeA: IncrementVote()
+    else No Majority Preference
+        NodeA->>NodeA: DecrementVote()
+    end
+
+    alt Confidence >= Threshold
+        NodeA->>NodeA: Accept Transaction
+    else Confidence <= -Threshold
+        NodeA->>NodeA: Reject Transaction
+    end
+
+    Note over NodeA: Continue querying nodes until consensus is reached
+
+```
+
+Explanation
+Transaction Creation:
+
+Node A creates a random transaction by calling RandomTransaction().
+The network returns the transaction to Node A.
+Handling the Transaction:
+
+Node A processes the transaction by calling HandleMessage().
+Querying Peers:
+
+Node A queries Node B for its preference regarding the transaction.
+Node B responds with its preference.
+Node A queries Node C for its preference.
+Node C responds with its preference.
+Node A queries Node D for its preference.
+Node D responds with its preference.
+Voting Based on Preferences:
+
+If the majority of nodes agree with the preference, Node A increments the vote count.
+If there is no majority agreement, Node A decrements the vote count.
+Consensus Decision:
+
+If the confidence level reaches the threshold, Node A accepts the transaction.
+If the confidence level drops below the negative threshold, Node A rejects the transaction.
+Continued Querying:
+
+Node A continues to query other nodes until consensus is reached, either by accepting or rejecting the transaction.
+
+### Class diagram for the Avalanche Consensus Protocol implementation
 
 ```mermaid
 classDiagram
@@ -47,20 +115,40 @@ classDiagram
         +RandomTransaction() *Transaction
         +Serialize() []byte
         +Hash() string
+        +ConflictWith(other *Transaction) bool
+    }
+
+    class Node {
+        +int64 ID
+        +map~string, TxState~ Mempool
+        +NewNode(id int64) *Node
+        +HandleMessage(origin int64, msg Message)
+        +QueryNode(peer *Node, txHash string) bool
+    }
+
+    class TxState {
+        +Transaction Tx
+        +int Confidence
+        +bool Accepted
+        +bool Rejected
+        +int ConfidenceThreshold
+        +int Alpha
+        +int Beta
+        +int SnowflakeCounter
+        +int SnowballCounter
+        +bool Preference
+        +NewTxState(tx *Transaction) *TxState
+        +IncrementVote()
+        +DecrementVote()
     }
 
     class Network {
         +map~int64, Node~ nodes
         +NewNetwork(n int64) *Network
         +Run()
-    }
-
-    class Node {
-        +sync.Mutex
-        +int64 ID
-        +map~string, TxState~ Mempool
-        +NewNode(id int64) *Node
-        +HandleMessage(origin int64, msg Message)
+        +simulateNodeActivity(node *Node)
+        +queryPeers(node *Node, txHash string) bool
+        +getRandomPeers(nodeID int64, count int) []*Node
     }
 
     class Message {
@@ -71,36 +159,11 @@ classDiagram
         +Transaction Tx
     }
 
-    class TxState {
-        // Implementation of TxState, similar to Rust version
-    }
-
-    Network "1" *-- "many" Node : contains
     Node "1" *-- "many" TxState : manages
+    Network "1" *-- "many" Node : contains
     MessageTransaction --|> Message : implements
-    Node "1" o-- "many" Message : processes
-    Transaction "1" *-- "1" TxState : represents
+    Node "1" *-- "many" Message : processes
+    TxState "1" *-- "1" Transaction : includes
 
-```
-
-Creating a Random Transaction
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant Transaction
-    User->>Transaction: RandomTransaction()
-    Transaction-->>User: *Transaction
-
-```
-
-Handling a Message
-```mermaid
-sequenceDiagram
-    participant OriginNode
-    participant TargetNode
-    participant Message
-    OriginNode->>TargetNode: Send Message
-    TargetNode->>TargetNode: HandleMessage(origin, msg)
 
 ```
